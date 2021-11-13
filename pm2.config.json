@@ -1,0 +1,9 @@
+{
+  "apps": [
+    {
+      "name": "pocket api",
+      "script": "npm",
+      "args": "run start:prod"
+    }
+  ]
+}
