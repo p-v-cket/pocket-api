@@ -3,9 +3,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { Store } from '../pocket/store/store.entity';
 
 @Entity()
 export class Owner extends BaseEntity {
@@ -38,4 +40,7 @@ export class Owner extends BaseEntity {
 
   @Column({ default: false })
   is_blocked: boolean;
+
+  @OneToMany(() => Store, (store) => store.owner)
+  stores: Store[];
 }

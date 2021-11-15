@@ -3,9 +3,11 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { EntryLog } from '../pocket/entry_log/entry_log.entity';
 
 @Entity()
 export class User extends BaseEntity {
@@ -38,4 +40,7 @@ export class User extends BaseEntity {
 
   @UpdateDateColumn()
   updated_at: Date;
+
+  @OneToMany(() => EntryLog, (entryLog) => entryLog.user)
+  entry_logs: EntryLog[];
 }
