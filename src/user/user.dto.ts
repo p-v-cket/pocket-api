@@ -17,3 +17,15 @@ export class LoginUserDto {
   @ApiProperty()
   readonly password: string;
 }
+
+export class PhoneVerifyDto {
+  @ApiProperty()
+  readonly phone: string;
+  @ApiProperty()
+  readonly code: string;
+}
+
+export class PhoneNumberDto {
+  @ApiProperty()
+  readonly phone: string;
+}

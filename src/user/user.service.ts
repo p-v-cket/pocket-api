@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  HttpService,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -9,6 +10,7 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
 import { LoginUserDto, SignupUserDto } from './user.dto';
+import * as CryptoJS from 'crypto-js';
 
 @Injectable()
 export class UserService {
@@ -16,6 +18,7 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepo: Repository<User>,
     private readonly jwtService: JwtService,
+    private httpService: HttpService,
   ) {}
 
   async createUser(dto: SignupUserDto) {
@@ -36,11 +39,94 @@ export class UserService {
         area: dto.area.trim(),
         password: encryptedPassword,
         salt_key: cryptoSalt,
-        temp_code: this.generateRandomString(6),
+        temp_code: this.generateRandomCode(6),
       },
     );
 
+    await this.sendMessage(
+      `[POCKET] 인증코드는 ${temp_code} 입니다.`,
+      user.phone,
+    );
+
     return user;
+  }
+
+  async verifyPhoneNumber(phoneNumber: string, code: string) {
+    const user = await this.userRepo.findOne({
+      phone: phoneNumber,
+      temp_code: code,
+    });
+    if (user) {
+      // 인증코드가 일치할 경우 -> 번호 인증 여부 True + 기존 인증코드 변경
+      await this.userRepo.update(
+        { uuid: user.uuid },
+        { temp_code: this.generateRandomCode(6), phone_verified: true },
+      );
+      return '인증 성공!';
+    }
+    throw new UnauthorizedException('인증코드가 올바르지 않습니다.');
+  }
+
+  async verifyCodeResend(phoneNumber: string) {
+    const user = await this.userRepo.findOne({
+      phone: phoneNumber,
+    });
+
+    if (user) {
+      const code = this.generateRandomCode(6);
+      await this.userRepo.update(
+        { phone: phoneNumber },
+        { temp_code: code, phone_verified: true },
+      );
+
+      await this.sendMessage(`[POCKET] 인증코드는 ${code} 입니다.`, user.phone);
+      return '인증코드 전송됨';
+    }
+    throw new UnauthorizedException('등록되지 않은 사용자입니다.');
+  }
+
+  async sendMessage(content: string, phoneNumber: string) {
+    // Signature 생성하기
+    const date = Date.now().toString();
+    const serviceId = process.env.SMS_API_SERVICE_ID;
+    const secretKey = process.env.SMS_API_SECRET_KEY;
+    const accessKey = process.env.SMS_API_ACCESS_KEY;
+    const method = 'POST';
+    const space = ' ';
+    const newLine = '\n';
+    const url = `/sms/v2/services/${serviceId}/messages`;
+    const hmac = CryptoJS.algo.HMAC.create(CryptoJS.algo.SHA256, secretKey);
+    hmac.update(method);
+    hmac.update(space);
+    hmac.update(url);
+    hmac.update(newLine);
+    hmac.update(date);
+    hmac.update(newLine);
+    hmac.update(accessKey);
+    const hash = hmac.finalize();
+    const signature = hash.toString(CryptoJS.enc.Base64);
+
+    // SMS 요청하기
+    return this.httpService
+      .post(
+        `https://sens.apigw.ntruss.com${url}`,
+        {
+          type: 'SMS',
+          from: `${process.env.SMS_API_PHONE_NUMBER}`,
+          contentType: 'COMM',
+          content: content,
+          messages: [{ to: phoneNumber }],
+          files: [],
+        },
+        {
+          headers: {
+            'x-ncp-apigw-timestamp': date,
+            'x-ncp-iam-access-key': accessKey,
+            'x-ncp-apigw-signature-v2': signature,
+          },
+        },
+      )
+      .toPromise();
   }
 
   async getAccessToken(dto: LoginUserDto) {
@@ -87,5 +173,13 @@ export class UserService {
     return crypto
       .pbkdf2Sync(password, cryptoSalt, 10000, 64, 'sha512')
       .toString('base64');
+  }
+
+  generateRandomCode(n: number) {
+    let str = '';
+    for (let i = 0; i < n; i++) {
+      str += Math.floor(Math.random() * 10);
+    }
+    return str;
   }
 }
