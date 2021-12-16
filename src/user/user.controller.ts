@@ -1,7 +1,13 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserService } from './user.service';
-import {LoginUserDto, PhoneNumberDto, PhoneVerifyDto, ResetPasswordDto, SignupUserDto} from './user.dto';
+import {
+  LoginUserDto,
+  PhoneNumberDto,
+  PhoneVerifyDto,
+  ResetPasswordDto,
+  SignupUserDto,
+} from './user.dto';
 import { UserGuard } from '../auth/user.guard';
 
 @ApiTags('User')

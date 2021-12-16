@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { HttpModule, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule } from '@nestjs/config';
@@ -14,6 +14,7 @@ import { OwnerController } from './owner.controller';
       secret: process.env.JWT_SECRET,
       signOptions: { expiresIn: '3000h' }, // 단위 문제가 있음... 1000 곱해야 3시간임
     }),
+    HttpModule,
   ],
   controllers: [OwnerController],
   providers: [OwnerService],
