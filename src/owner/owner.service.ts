@@ -42,6 +42,11 @@ export class OwnerService {
         temp_code: this.generateRandomString(6),
       });
 
+    await this.sendMessage(
+      `[POCKET] 사장님 인증코드는 ${temp_code} 입니다.`,
+      user.phone,
+    );
+
     return user;
   }
 
