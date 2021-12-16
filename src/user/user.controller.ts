@@ -1,7 +1,7 @@
 import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { UserService } from './user.service';
-import {LoginUserDto, PhoneNumberDto, PhoneVerifyDto, SignupUserDto} from './user.dto';
+import {LoginUserDto, PhoneNumberDto, PhoneVerifyDto, ResetPasswordDto, SignupUserDto} from './user.dto';
 import { UserGuard } from '../auth/user.guard';
 
 @ApiTags('User')
@@ -47,6 +47,16 @@ export class UserController {
   })
   verifyCodeResend(@Body() dto: PhoneNumberDto) {
     return this.userService.verifyCodeResend(dto.phone);
+  }
+
+  @Post('change-password')
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiOperation({
+    summary: '암호 변경',
+    description: '사용자 암호를 변경합니다.',
+  })
+  changePassword(@Body() dto: ResetPasswordDto) {
+    return this.userService.resetPassword(dto);
   }
 
   // TODO: 완성되면 지우기

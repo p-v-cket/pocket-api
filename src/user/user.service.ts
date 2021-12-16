@@ -9,7 +9,7 @@ import { User } from './user.entity';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as crypto from 'crypto';
-import { LoginUserDto, SignupUserDto } from './user.dto';
+import { LoginUserDto, ResetPasswordDto, SignupUserDto } from './user.dto';
 import * as CryptoJS from 'crypto-js';
 
 @Injectable()
@@ -181,5 +181,34 @@ export class UserService {
       str += Math.floor(Math.random() * 10);
     }
     return str;
+  }
+
+  async resetPassword(dto: ResetPasswordDto) {
+    // 번호랑 인증코드 확인 후
+    const user = await this.userRepo.findOne({
+      phone: dto.phone,
+      temp_code: dto.code,
+    });
+    if (user) {
+      const cryptoSalt = this.generateRandomString(64);
+      const encryptedPassword = this.encryptPassword(
+        dto.new_password.trim(),
+        cryptoSalt,
+      );
+
+      // 비밀번호 변경
+      await this.userRepo.update(
+        { uuid: user.uuid },
+        {
+          temp_code: this.generateRandomCode(6),
+          password: encryptedPassword,
+          salt_key: cryptoSalt,
+        },
+      );
+      return '비밀번호 변경됨';
+    }
+    throw new UnauthorizedException(
+      '잘못된 인증번호 또는 등록되지 않은 사용자입니다.',
+    );
   }
 }

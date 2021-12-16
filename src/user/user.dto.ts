@@ -29,3 +29,12 @@ export class PhoneNumberDto {
   @ApiProperty()
   readonly phone: string;
 }
+
+export class ResetPasswordDto {
+  @ApiProperty()
+  readonly phone: string;
+  @ApiProperty()
+  readonly code: string;
+  @ApiProperty()
+  readonly new_password: string;
+}
